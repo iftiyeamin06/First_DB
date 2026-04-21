@@ -3,9 +3,11 @@ console.log("Password Loaded:", process.env.DB_PASSWORD ? "YES" : "NO");
 const express = require('express');
 
 const mysql = require('mysql2');
+const cors = require('cors'); // At the top
 const app = express();
 const port = 3000;
 
+app.use(cors());              // Right before your routes
 // Middleware to parse JSON bodies (essential for CRUD)
 app.use(express.json());
 
@@ -61,17 +63,29 @@ app.post('/products', (req, res) => {
 });
 
 // UPDATE a product's price or stock
+// IMPROVED UPDATE ROUTE
 app.put('/products/:id', (req, res) => {
-  const { id } = req.params; // Grabs the ID from the URL
-  const {name, price, stock, category } = req.body; // Grabs new data from the body
+    const { id } = req.params;
+    const { name, price, stock, category } = req.body;
 
-  const sql = 'UPDATE products SET name = ?, price = ?, stock = ?, category = ? WHERE id = ?';
-  
-  connection.query(sql, [name, price, stock, category, id], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    // 1. Validation (The "Brain" of the Backend)
+    if (price < 0 || stock < 0) {
+        return res.status(400).json({ error: "Price and stock cannot be negative!" });
+    }
+
+    const sql = 'UPDATE products SET name = ?, price = ?, stock = ?, category = ? WHERE id = ?';
     
-    res.json({ message: 'Product updated successfully' });
-  });
+    // 2. Execution (The "Bridge" to MySQL)
+    connection.query(sql, [name, price, stock, category, id], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        // 3. Feedback (Did we actually find a product with that ID?)
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Product not found!" });
+        }
+        
+        res.json({ message: 'Product updated successfully' });
+    });
 });
 
 // DELETE a product
