@@ -22,7 +22,7 @@ app.use(express.json());
 const connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: process.env.DB_PASSWORD, 
+  password: process.env.DB_PASSWORD, ///
   database: 'my_store'
 });
 
