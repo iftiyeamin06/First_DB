@@ -4,80 +4,141 @@
     <meta charset="UTF-8">
     <title>My Store Inventory</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f4f4f4; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 40px; background-color: #f0f2f5; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 25px; display: flex; gap: 10px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; flex: 1; }
+        
+        /* Stats Styling */
+        #stats-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; }
+        .stat-label { font-size: 12px; color: #64748b; text-transform: uppercase; display: block; }
+        .stat-number { font-size: 20px; font-weight: bold; color: #1e293b; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        button { padding: 8px 12px; cursor: pointer; border-radius: 4px; border: none; font-weight: bold; }
+        .btn-add { background: #007bff; color: white; }
+        .btn-update { background: #10b981; color: white; }
+        .btn-delete { background: #ef4444; color: white; }
     </style>
 </head>
 <body>
-    <h1>Product Inventory</h1>
-    <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ccc;">
-    <h3>Add New Product</h3>
-    <input type="text" id="name" placeholder="Name">
-    <input type="number" id="price" placeholder="Price">
-    <input type="number" id="stock" placeholder="Stock">
-    <button onclick="addProduct()">Add to Inventory</button>
-</div>
-    <button onclick="loadProducts()">Refresh Products</button>
-    
-    <table id="productTable">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Price</th>
-                <th>Stock</th>
-            </tr>
-        </thead>
-        <tbody>
-            </tbody>
-    </table>
+    <div class="container">
+        <h1>📦 Store Manager</h1>
+        
+        <div class="form-group">
+            <input type="text" id="name" placeholder="Product Name">
+            <input type="number" id="price" placeholder="Price">
+            <input type="number" id="stock" placeholder="Stock">
+            <button onclick="addProduct()" class="btn-add">Add Product</button>
+        </div>
+
+        <div id="stats-container">
+            <div class="stat-card">
+                <span class="stat-label">Total Items</span>
+                <span id="stat-total" class="stat-number">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Store Value</span>
+                <span class="stat-number">$<span id="stat-value">0</span></span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label" style="color: #ef4444;">Low Stock</span>
+                <span id="stat-low" class="stat-number" style="color: #ef4444;">0</span>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr><th>ID</th><th>Name</th><th>Price</th><th>Stock</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="product-list"></tbody>
+        </table>
+    </div>
 
     <script>
-        async function loadProducts() {
-            // 1. The Handshake (Calling Bridge 1)
-            const response = await fetch('http://localhost:3000/products');
-            
-            // 2. The Translation (Turning JSON back into a JS Object)
-            const products = await response.json();
-            
-            
-            const tableBody = document.querySelector('#productTable tbody');
-            tableBody.innerHTML = ''; // Clear the table first
+        const API_URL = 'http://localhost:3000/products';
+        let editingId = null;
 
-            // 3. The Render (Putting the data on the screen)
-            products.forEach(product => {
-                const row = `<tr>
-                    <td>${product.id}</td>
-                    <td>${product.name}</td>
-                    <td>$${product.price}</td>
-                    <td>${product.stock}</td>
-                </tr>`;
-                tableBody.innerHTML += row;
+        async function loadStats() {
+            try {
+                const res = await fetch('http://localhost:3000/stats');
+                const stats = await res.json();
+                document.getElementById('stat-total').innerText = stats.totalItems;
+                document.getElementById('stat-value').innerText = Number(stats.totalValue).toLocaleString();
+                document.getElementById('stat-low').innerText = stats.lowStockCount;
+            } catch (err) { console.error("Stats fail:", err); }
+        }
+
+        async function loadInventory() {
+            loadStats(); // Refresh stats whenever we refresh the table
+            const res = await fetch(API_URL);
+            const products = await res.json();
+            const list = document.getElementById('product-list');
+            list.innerHTML = ''; 
+
+            products.forEach(p => {
+                const row = document.createElement('tr');
+                if (editingId === p.id) {
+                    row.innerHTML = `
+                        <td>${p.id}</td>
+                        <td><input type="text" id="edit-name-${p.id}" value="${p.name}"></td>
+                        <td><input type="number" id="edit-price-${p.id}" value="${p.price}"></td>
+                        <td><input type="number" id="edit-stock-${p.id}" value="${p.stock}"></td>
+                        <td><button class="btn-update" onclick="saveEdit(${p.id})">Save</button></td>
+                    `;
+                } else {
+                    row.innerHTML = `
+                        <td>${p.id}</td><td>${p.name}</td><td>$${p.price}</td><td>${p.stock}</td>
+                        <td>
+                            <button class="btn-update" onclick="startEdit(${p.id})">Edit</button>
+                            <button class="btn-delete" onclick="deleteProduct(${p.id})">Delete</button>
+                        </td>
+                    `;
+                }
+                list.appendChild(row);
             });
         }
-        // 2. The Delivery Function
-    async function addProduct() {
-        const name = document.getElementById('name').value;
-        const price = document.getElementById('price').value;
-        const stock = document.getElementById('stock').value;
 
-        // The Handshake (POST request)
-        const response = await fetch('http://localhost:3000/products', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, price, stock, category: 'General' })
-        });
+        async function addProduct() {
+            const name = document.getElementById('name').value;
+            const price = document.getElementById('price').value;
+            const stock = document.getElementById('stock').value;
+            if (!name || !price || !stock) return alert("Empty fields!");
 
-        if (response.ok) {
-            alert('Product added!');
-            loadProducts(); // Refresh the table automatically
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, price, stock })
+            });
+            loadInventory();
         }
-    }
 
-        // Run automatically when page opens
-        loadProducts();
+        async function deleteProduct(id) {
+            if (confirm("Delete?")) {
+                await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                loadInventory();
+            }
+        }
+
+        function startEdit(id) { editingId = id; loadInventory(); }
+
+        async function saveEdit(id) {
+            const name = document.getElementById(`edit-name-${id}`).value;
+            const price = document.getElementById(`edit-price-${id}`).value;
+            const stock = document.getElementById(`edit-stock-${id}`).value;
+
+            await fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, price, stock })
+            });
+            editingId = null;
+            loadInventory();
+        }
+
+        loadInventory();
     </script>
 </body>
 </html>
