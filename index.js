@@ -6,6 +6,13 @@ const mysql = require('mysql2');
 const cors = require('cors'); // At the top
 const app = express();
 const port = 3000;
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.listen(port, () => {
+    console.log(`Server is running at http://localhost:${port}`);
+});
 
 app.use(cors());              // Right before your routes
 // Middleware to parse JSON bodies (essential for CRUD)
