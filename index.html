@@ -67,10 +67,16 @@
             </div>
 
             <div class="filter-section">
-                <label for="filter-category">Filter by Category:</label>
-                <select id="filter-category" onchange="loadInventory()" style="max-width: 200px;">
-                    <option value="all">All Categories</option>
-                </select>
+                <div style="flex: 2; display: flex; align-items: center; gap: 10px;">
+                    <label for="search-input">🔍 Search:</label>
+                    <input type="text" id="search-input" placeholder="Search by name..." oninput="loadInventory()">
+                </div>
+                <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
+                    <label for="filter-category">Category:</label>
+                    <select id="filter-category" onchange="loadInventory()">
+                        <option value="all">All</option>
+                    </select>
+                </div>
             </div>
 
             <table>
@@ -119,13 +125,20 @@
         async function loadInventory() {
             loadStats(); 
             const filterValue = document.getElementById('filter-category').value;
-            
+            const searchValue = document.getElementById('search-input').value.toLowerCase();
+
             try {
                 const res = await fetch(API_URL);
                 let products = await res.json();
-                
+
+                // Filter by Category
                 if (filterValue !== 'all') {
                     products = products.filter(p => p.category_id == filterValue);
+                }
+
+                // Filter by Search Name
+                if (searchValue) {
+                    products = products.filter(p => p.name.toLowerCase().includes(searchValue));
                 }
 
                 const list = document.getElementById('product-list');
