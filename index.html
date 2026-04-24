@@ -6,8 +6,8 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; padding: 40px; background-color: #f0f2f5; }
         .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 25px; display: flex; gap: 10px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
-        input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; flex: 1; }
+        .form-group { margin-bottom: 25px; display: flex; gap: 10px; border-bottom: 1px solid #eee; padding-bottom: 20px; flex-wrap: wrap; }
+        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; flex: 1; min-width: 150px; }
         
         /* Stats Styling */
         #stats-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
@@ -21,40 +21,85 @@
         .btn-add { background: #007bff; color: white; }
         .btn-update { background: #10b981; color: white; }
         .btn-delete { background: #ef4444; color: white; }
+        
+        nav { margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; gap: 10px; }
+        
+        .filter-section { margin-bottom: 20px; padding: 10px; background: #f8fafc; border-radius: 8px; display: flex; align-items: center; gap: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📦 Store Manager</h1>
-        
-        <div class="form-group">
-            <input type="text" id="name" placeholder="Product Name">
-            <input type="number" id="price" placeholder="Price">
-            <input type="number" id="stock" placeholder="Stock">
-            <button onclick="addProduct()" class="btn-add">Add Product</button>
+        <nav>
+            <button onclick="showSection('inventory-section')" style="background: #007bff; color: white;">📦 Inventory</button>
+            <button onclick="showSection('category-section')" style="background: #6c757d; color: white;">📁 Categories</button>
+            <a href="login.html" style="margin-left: auto; text-decoration: none; background: #1a202c; color: white; padding: 8px 15px; border-radius: 4px; font-weight: bold; font-size: 14px;">🔐 Admin Panel</a>
+        </nav>
+
+        <div id="inventory-section" class="page-section">
+            <h1>📦 Store Manager</h1>
+            <h2>Product Inventory</h2>
+            
+            <div class="form-group">
+                <input type="text" id="name" placeholder="Product Name">
+                <input type="number" id="price" placeholder="Price">
+                <input type="number" id="stock" placeholder="Stock">
+                
+                <select id="cat-select">
+                    <option value="">Select Category</option>
+                </select> 
+
+                <button onclick="addProduct()" class="btn-add">Add Product</button>
+            </div>
+
+            <div id="stats-container">
+                <div class="stat-card">
+                    <span class="stat-label">Total Items</span>
+                    <span id="stat-total" class="stat-number">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Store Value</span>
+                    <span class="stat-number">$<span id="stat-value">0</span></span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label" style="color: #ef4444;">Low Stock</span>
+                    <span id="stat-low" class="stat-number" style="color: #ef4444;">0</span>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <label for="filter-category">Filter by Category:</label>
+                <select id="filter-category" onchange="loadInventory()" style="max-width: 200px;">
+                    <option value="all">All Categories</option>
+                </select>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Code</th> <th>Name</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="product-list"></tbody>
+            </table>
         </div>
 
-        <div id="stats-container">
-            <div class="stat-card">
-                <span class="stat-label">Total Items</span>
-                <span id="stat-total" class="stat-number">0</span>
+        <div id="category-section" class="page-section" style="display:none;">
+            <h1>📁 Category Manager</h1>
+            <div class="form-group">
+                <input type="text" id="cat-name" placeholder="Category Name (e.g. Watches)">
+                <input type="text" id="cat-prefix" placeholder="Prefix (e.g. WAT)">
+                <button onclick="addCategory()" class="btn-add">Add Category</button>
             </div>
-            <div class="stat-card">
-                <span class="stat-label">Store Value</span>
-                <span class="stat-number">$<span id="stat-value">0</span></span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label" style="color: #ef4444;">Low Stock</span>
-                <span id="stat-low" class="stat-number" style="color: #ef4444;">0</span>
-            </div>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Name</th><th>Prefix</th></tr>
+                </thead>
+                <tbody id="category-list"></tbody>
+            </table>
         </div>
-
-        <table>
-            <thead>
-                <tr><th>ID</th><th>Name</th><th>Price</th><th>Stock</th><th>Actions</th></tr>
-            </thead>
-            <tbody id="product-list"></tbody>
-        </table>
     </div>
 
     <script>
@@ -72,53 +117,113 @@
         }
 
         async function loadInventory() {
-            loadStats(); // Refresh stats whenever we refresh the table
-            const res = await fetch(API_URL);
-            const products = await res.json();
-            const list = document.getElementById('product-list');
-            list.innerHTML = ''; 
-
-            products.forEach(p => {
-                const row = document.createElement('tr');
-                if (editingId === p.id) {
-                    row.innerHTML = `
-                        <td>${p.id}</td>
-                        <td><input type="text" id="edit-name-${p.id}" value="${p.name}"></td>
-                        <td><input type="number" id="edit-price-${p.id}" value="${p.price}"></td>
-                        <td><input type="number" id="edit-stock-${p.id}" value="${p.stock}"></td>
-                        <td><button class="btn-update" onclick="saveEdit(${p.id})">Save</button></td>
-                    `;
-                } else {
-                    row.innerHTML = `
-                        <td>${p.id}</td><td>${p.name}</td><td>$${p.price}</td><td>${p.stock}</td>
-                        <td>
-                            <button class="btn-update" onclick="startEdit(${p.id})">Edit</button>
-                            <button class="btn-delete" onclick="deleteProduct(${p.id})">Delete</button>
-                        </td>
-                    `;
+            loadStats(); 
+            const filterValue = document.getElementById('filter-category').value;
+            
+            try {
+                const res = await fetch(API_URL);
+                let products = await res.json();
+                
+                if (filterValue !== 'all') {
+                    products = products.filter(p => p.category_id == filterValue);
                 }
-                list.appendChild(row);
-            });
+
+                const list = document.getElementById('product-list');
+                list.innerHTML = ''; 
+
+                products.forEach(p => {
+                    const row = document.createElement('tr');
+                    if (editingId === p.id) {
+                        row.innerHTML = `
+                            <td>${p.item_code || '---'}</td>
+                            <td><input type="text" id="edit-name-${p.id}" value="${p.name}"></td>
+                            <td><input type="number" id="edit-price-${p.id}" value="${p.price}"></td>
+                            <td><input type="number" id="edit-stock-${p.id}" value="${p.stock}"></td>
+                            <td><button class="btn-update" onclick="saveEdit(${p.id})">Save</button></td>
+                        `;
+                    } else {
+                        row.innerHTML = `
+                            <td><strong>${p.item_code || '---'}</strong></td>
+                            <td>${p.name}</td>
+                            <td>$${p.price}</td>
+                            <td>${p.stock}</td>
+                            <td>
+                                <button class="btn-update" onclick="startEdit(${p.id})">Edit</button>
+                                <button class="btn-delete" onclick="deleteProduct(${p.id})">Delete</button>
+                            </td>
+                        `;
+                    }
+                    list.appendChild(row);
+                });
+            } catch (err) {
+                console.error("Load inventory fail:", err);
+            }
         }
 
         async function addProduct() {
             const name = document.getElementById('name').value;
             const price = document.getElementById('price').value;
             const stock = document.getElementById('stock').value;
-            if (!name || !price || !stock) return alert("Empty fields!");
+            const category_id = document.getElementById('cat-select').value;
 
-            await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, price, stock })
-            });
-            loadInventory();
+            if (!name || !price || !stock || !category_id) return alert("Please fill all fields and select a category!");
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, price, stock, category_id })
+                });
+
+                const result = await res.json();
+                if (!res.ok) return alert(result.error || "Failed to add product");
+
+                document.getElementById('name').value = '';
+                document.getElementById('price').value = '';
+                document.getElementById('stock').value = '';
+                
+                loadInventory();
+            } catch (err) {
+                console.error("Add product fail:", err);
+                alert("Server error connecting to backend");
+            }
         }
 
         async function deleteProduct(id) {
             if (confirm("Delete?")) {
-                await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-                loadInventory();
+                try {
+                    await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                    loadInventory();
+                } catch (err) {
+                    console.error("Delete product fail:", err);
+                }
+            }
+        }
+
+        async function addCategory() {
+            const name = document.getElementById('cat-name').value;
+            const prefix = document.getElementById('cat-prefix').value;
+
+            if (!name || !prefix) return alert("Fill category name and prefix!");
+
+            try {
+                const res = await fetch('http://localhost:3000/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, prefix })
+                });
+
+                const result = await res.json();
+                if (!res.ok) return alert(result.error || "Failed to add category");
+
+                document.getElementById('cat-name').value = '';
+                document.getElementById('cat-prefix').value = '';
+                
+                loadCategories();
+                fillCategoryDropdowns();
+            } catch (err) {
+                console.error("Add category fail:", err);
+                alert("Server error connecting to backend");
             }
         }
 
@@ -129,15 +234,70 @@
             const price = document.getElementById(`edit-price-${id}`).value;
             const stock = document.getElementById(`edit-stock-${id}`).value;
 
-            await fetch(`${API_URL}/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, price, stock })
-            });
-            editingId = null;
-            loadInventory();
+            try {
+                await fetch(`${API_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, price, stock })
+                });
+                editingId = null;
+                loadInventory();
+            } catch (err) {
+                console.error("Save edit fail:", err);
+            }
         }
 
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll('.page-section');
+            sections.forEach(section => {
+                section.style.display = 'none';
+            });
+
+            const target = document.getElementById(sectionId);
+            if (target) {
+                target.style.display = 'block';
+            }
+
+            if (sectionId === 'category-section') {
+                loadCategories();
+            }
+        }
+
+        async function loadCategories() {
+            try {
+                const res = await fetch('http://localhost:3000/categories');
+                const data = await res.json();
+                const list = document.getElementById('category-list');
+                list.innerHTML = data.map(c => `<tr><td>${c.id}</td><td>${c.name}</td><td>${c.prefix}</td></tr>`).join('');
+            } catch (err) {
+                console.error("Load categories fail:", err);
+            }
+        }
+
+        async function fillCategoryDropdowns() {
+            try {
+                const res = await fetch('http://localhost:3000/categories');
+                const categories = await res.json();
+                
+                // Fill Add Product dropdown
+                const select = document.getElementById('cat-select');
+                select.innerHTML = '<option value="">Select Category</option>' + 
+                    categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                
+                // Fill Filter dropdown
+                const filterSelect = document.getElementById('filter-category');
+                const currentFilter = filterSelect.value;
+                filterSelect.innerHTML = '<option value="all">All Categories</option>' + 
+                    categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                filterSelect.value = currentFilter;
+            } catch (err) {
+                console.error("Fill category dropdown fail:", err);
+            }
+        }
+
+        // Initialize
+        showSection('inventory-section');
+        fillCategoryDropdowns();
         loadInventory();
     </script>
 </body>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - My Store</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a202c; color: #e2e8f0; margin: 0; padding: 20px; }
+        .dashboard-container { max-width: 1200px; margin: auto; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d3748; padding-bottom: 20px; margin-bottom: 30px; }
+        .nav-buttons { display: flex; gap: 10px; align-items: center; }
+        .btn { background: #4a5568; color: white; text-decoration: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer; }
+        .logout-btn { background: #e53e3e; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: #2d3748; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .card h2 { margin-top: 0; color: #63b3ed; border-bottom: 1px solid #4a5568; padding-bottom: 10px; font-size: 1.2rem; }
+        
+        .big-number { font-size: 3rem; font-weight: bold; display: block; margin: 10px 0; color: #fff; }
+        .label { color: #a0aec0; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
+        
+        .list-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #4a5568; }
+        .list-item:last-child { border-bottom: none; }
+        .warning { color: #f56565; font-weight: bold; }
+        .success { color: #48bb78; font-weight: bold; }
+        #user-greeting { color: #63b3ed; font-weight: bold; margin-right: 15px; }
+    </style>
+</head>
+<body>
+    <script>
+        // AUTH CHECK BEFORE PAGE RENDERS
+        const token = localStorage.getItem('adminToken');
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+    </script>
+
+    <div class="dashboard-container">
+        <header>
+            <h1>🔐 Admin Dashboard</h1>
+            <div class="nav-buttons">
+                <span id="user-greeting">Welcome, Admin</span>
+                <a href="index.html" class="btn">← Store</a>
+                <button onclick="handleLogout()" class="btn logout-btn">Logout</button>
+            </div>
+        </header>
+
+        <div class="grid">
+            <div class="card">
+                <h2>System Overview</h2>
+                <div style="margin-bottom: 20px;">
+                    <span class="label">Categories Managed</span>
+                    <span id="cat-count" class="big-number">0</span>
+                </div>
+                <div>
+                    <span class="label">Out of Stock Items</span>
+                    <span id="out-of-stock" class="big-number warning">0</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Critical Stock Levels (< 3)</h2>
+                <div id="health-list">
+                    <p>Loading health data...</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Highest Value Assets</h2>
+                <div id="top-products">
+                    <p>Loading value data...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid" style="margin-top: 20px;">
+            <div class="card" style="grid-column: span 2;">
+                <h2>Admin Tools</h2>
+                <p>Status: <span class="success">Authenticated</span></p>
+                <button onclick="alert('Database backup initiated')" style="background: #3182ce; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">📦 Backup Database</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('user-greeting').innerText = `Welcome, ${localStorage.getItem('adminUser') || 'Admin'}`;
+
+        async function fetchAdminStats() {
+            const authToken = localStorage.getItem('adminToken');
+            try {
+                const res = await fetch('http://localhost:3000/admin/stats', {
+                    headers: { 'Authorization': authToken }
+                });
+
+                if (res.status === 403 || res.status === 401) {
+                    handleLogout();
+                    return;
+                }
+
+                const data = await res.json();
+
+                document.getElementById('cat-count').innerText = data.categoryCount[0].count;
+                document.getElementById('out-of-stock').innerText = data.outOfStock[0].count;
+
+                const healthList = document.getElementById('health-list');
+                healthList.innerHTML = data.inventoryHealth.length > 0 
+                    ? data.inventoryHealth.map(p => `<div class="list-item"><span>${p.name}</span> <span class="warning">${p.stock} left</span></div>`).join('')
+                    : '<p class="success">All items are well-stocked!</p>';
+
+                const topProducts = document.getElementById('top-products');
+                topProducts.innerHTML = data.topValueProducts.length > 0
+                    ? data.topValueProducts.map(p => `<div class="list-item"><span>${p.name}</span> <span>$${Number(p.total_value).toLocaleString()}</span></div>`).join('')
+                    : '<p>No inventory found.</p>';
+
+            } catch (err) {
+                console.error("Admin stats failed:", err);
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminUser');
+            window.location.href = 'login.html';
+        }
+
+        fetchAdminStats();
+    </script>
+</body>
+</html>
