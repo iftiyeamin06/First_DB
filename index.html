@@ -99,6 +99,12 @@
                 <input type="text" id="cat-prefix" placeholder="Prefix (e.g. WAT)">
                 <button onclick="addCategory()" class="btn-add">Add Category</button>
             </div>
+            <div class="filter-section">
+                <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
+                    <label for="cat-search-input">🔍 Search:</label>
+                    <input type="text" id="cat-search-input" placeholder="Search by name or prefix..." oninput="loadCategories()">
+                </div>
+            </div>
             <table>
                 <thead>
                     <tr><th>ID</th><th>Name</th><th>Prefix</th></tr>
@@ -125,21 +131,22 @@
         async function loadInventory() {
             loadStats(); 
             const filterValue = document.getElementById('filter-category').value;
-            const searchValue = document.getElementById('search-input').value.toLowerCase();
+            const searchValue = document.getElementById('search-input').value.trim();
 
             try {
-                const res = await fetch(API_URL);
-                let products = await res.json();
-
-                // Filter by Category
-                if (filterValue !== 'all') {
-                    products = products.filter(p => p.category_id == filterValue);
-                }
-
-                // Filter by Search Name
+                // Build query parameters
+                const params = new URLSearchParams();
                 if (searchValue) {
-                    products = products.filter(p => p.name.toLowerCase().includes(searchValue));
+                    params.append('search', searchValue);
                 }
+                if (filterValue !== 'all') {
+                    params.append('category_id', filterValue);
+                }
+                const queryString = params.toString();
+                const url = queryString ? `${API_URL}?${queryString}` : API_URL;
+
+                const res = await fetch(url);
+                const products = await res.json();
 
                 const list = document.getElementById('product-list');
                 list.innerHTML = ''; 
@@ -278,7 +285,15 @@
 
         async function loadCategories() {
             try {
-                const res = await fetch('http://localhost:3000/categories');
+                const searchValue = document.getElementById('cat-search-input').value.trim();
+                const params = new URLSearchParams();
+                if (searchValue) {
+                    params.append('search', searchValue);
+                }
+                const queryString = params.toString();
+                const url = queryString ? `http://localhost:3000/categories?${queryString}` : 'http://localhost:3000/categories';
+
+                const res = await fetch(url);
                 const data = await res.json();
                 const list = document.getElementById('category-list');
                 list.innerHTML = data.map(c => `<tr><td>${c.id}</td><td>${c.name}</td><td>${c.prefix}</td></tr>`).join('');
