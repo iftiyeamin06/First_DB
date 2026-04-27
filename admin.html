@@ -5,25 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - My Store</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a202c; color: #e2e8f0; margin: 0; padding: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7fafc; color: #2d3748; margin: 0; padding: 20px; }
         .dashboard-container { max-width: 1200px; margin: auto; }
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d3748; padding-bottom: 20px; margin-bottom: 30px; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; }
         .nav-buttons { display: flex; gap: 10px; align-items: center; }
-        .btn { background: #4a5568; color: white; text-decoration: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer; }
+        .btn { background: #718096; color: white; text-decoration: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer; }
         .logout-btn { background: #e53e3e; }
         
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .card { background: #2d3748; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .card h2 { margin-top: 0; color: #63b3ed; border-bottom: 1px solid #4a5568; padding-bottom: 10px; font-size: 1.2rem; }
+        .card { background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        .card h2 { margin-top: 0; color: #3182ce; border-bottom: 1px solid #edf2f7; padding-bottom: 10px; font-size: 1.2rem; }
         
-        .big-number { font-size: 3rem; font-weight: bold; display: block; margin: 10px 0; color: #fff; }
-        .label { color: #a0aec0; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
+        .big-number { font-size: 3rem; font-weight: bold; display: block; margin: 10px 0; color: #2d3748; }
+        .label { color: #718096; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
         
-        .list-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #4a5568; }
+        .list-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #edf2f7; }
         .list-item:last-child { border-bottom: none; }
-        .warning { color: #f56565; font-weight: bold; }
-        .success { color: #48bb78; font-weight: bold; }
-        #user-greeting { color: #63b3ed; font-weight: bold; margin-right: 15px; }
+        .warning { color: #e53e3e; font-weight: bold; }
+        .success { color: #38a169; font-weight: bold; }
+        #user-greeting { color: #3182ce; font-weight: bold; margin-right: 15px; }
     </style>
 </head>
 <body>
@@ -40,7 +40,7 @@
             <h1>🔐 Admin Dashboard</h1>
             <div class="nav-buttons">
                 <span id="user-greeting">Welcome, Admin</span>
-                <a href="index.html" class="btn">← Store</a>
+                <a href="index.html" class="btn"> Store</a>
                 <button onclick="handleLogout()" class="btn logout-btn">Logout</button>
             </div>
         </header>
@@ -88,7 +88,7 @@
         async function fetchAdminStats() {
             const authToken = localStorage.getItem('adminToken');
             try {
-                const res = await fetch('http://localhost:3000/admin/stats', {
+                const res = await fetch('/admin/stats', {
                     headers: { 'Authorization': authToken }
                 });
 

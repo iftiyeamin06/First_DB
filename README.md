@@ -5,11 +5,11 @@ A full-stack web application for managing store inventory with categories, produ
 ## Features
 
 - Product inventory management with search and filtering
-- Category management
+- Category management with guided workflow
 - Real-time statistics
 - Admin dashboard with advanced analytics
 - Secure authentication with JWT
-- Responsive web interface
+- Responsive web interface with user-friendly navigation
 
 ## Tech Stack
 
@@ -39,22 +39,28 @@ A full-stack web application for managing store inventory with categories, produ
        id INT AUTO_INCREMENT PRIMARY KEY,
        name VARCHAR(255) NOT NULL,
        prefix VARCHAR(10) NOT NULL UNIQUE
-     );
+     ) AUTO_INCREMENT = 101;
 
      CREATE TABLE products (
        id INT AUTO_INCREMENT PRIMARY KEY,
        name VARCHAR(255) NOT NULL,
        price DECIMAL(10,2) NOT NULL,
+       previous_price DECIMAL(10,2) DEFAULT NULL,
        stock INT NOT NULL,
        category_id INT,
        item_code VARCHAR(50),
+       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
        FOREIGN KEY (category_id) REFERENCES categories(id)
      );
 
-     CREATE TABLE admin_users (
+     CREATE TABLE logs (
        id INT AUTO_INCREMENT PRIMARY KEY,
-       username VARCHAR(255) UNIQUE NOT NULL,
-       password VARCHAR(255) NOT NULL
+       product_id INT,
+       action_type ENUM('STOCK_IN', 'INVENTORY_CHANGE', 'PRICE_CHANGE', 'CREATE', 'DELETE') NOT NULL,
+       details TEXT,
+       quantity_changed INT DEFAULT 0,
+       timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+       FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
      );
 
      -- Insert default admin user (password: admin123)
@@ -70,8 +76,10 @@ A full-stack web application for managing store inventory with categories, produ
    ```
 
 6. **Access the app**
-   - Main app: http://localhost:3000
-   - Admin login: http://localhost:3000/login.html
+   - Main Dashboard: http://localhost:3000/index.html
+   - Admin Login: http://localhost:3000/login.html
+   
+   *Note: Always access through the `http://localhost` URL. Opening the `.html` files directly from your folder will cause the features to not work.*
 
 ## API Endpoints
 

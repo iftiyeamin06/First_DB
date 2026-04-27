@@ -2,130 +2,310 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Store Inventory</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 40px; background-color: #f0f2f5; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 25px; display: flex; gap: 10px; border-bottom: 1px solid #eee; padding-bottom: 20px; flex-wrap: wrap; }
-        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; flex: 1; min-width: 150px; }
-        
-        /* Stats Styling */
-        #stats-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
-        .stat-card { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; }
-        .stat-label { font-size: 12px; color: #64748b; text-transform: uppercase; display: block; }
-        .stat-number { font-size: 20px; font-weight: bold; color: #1e293b; }
-
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        button { padding: 8px 12px; cursor: pointer; border-radius: 4px; border: none; font-weight: bold; }
-        .btn-add { background: #007bff; color: white; }
-        .btn-update { background: #10b981; color: white; }
-        .btn-delete { background: #ef4444; color: white; }
-        
-        nav { margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; gap: 10px; }
-        
-        .filter-section { margin-bottom: 20px; padding: 10px; background: #f8fafc; border-radius: 8px; display: flex; align-items: center; gap: 10px; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Management Dashboard - My Store</title>
+    <!-- Dependencies -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <nav>
-            <button onclick="showSection('inventory-section')" style="background: #007bff; color: white;">📦 Inventory</button>
-            <button onclick="showSection('category-section')" style="background: #6c757d; color: white;">📁 Categories</button>
-            <a href="login.html" style="margin-left: auto; text-decoration: none; background: #1a202c; color: white; padding: 8px 15px; border-radius: 4px; font-weight: bold; font-size: 14px;">🔐 Admin Panel</a>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <span>🚀 StoreAdmin</span>
+        </div>
+        <nav class="nav-menu">
+            <button class="nav-item active" onclick="showSection('dashboard-section')" id="nav-dash">
+                📊 Dashboard
+            </button>
+            <button class="nav-item" onclick="showSection('inventory-section')" id="nav-inv">
+                📦 Inventory
+            </button>
+            <button class="nav-item" onclick="showSection('stock-in-section')" id="nav-stock">
+                📥 Stock In
+            </button>
+            <button class="nav-item" onclick="showSection('category-section')" id="nav-cat">
+                📁 Categories
+            </button>
+            <button class="nav-item" onclick="showSection('logs-section')" id="nav-logs">
+                📜 Activity Logs
+            </button>
         </nav>
-
-        <div id="inventory-section" class="page-section">
-            <h1>📦 Store Manager</h1>
-            <h2>Product Inventory</h2>
-            
-            <div class="form-group">
-                <input type="text" id="name" placeholder="Product Name">
-                <input type="number" id="price" placeholder="Price">
-                <input type="number" id="stock" placeholder="Stock">
-                
-                <select id="cat-select">
-                    <option value="">Select Category</option>
-                </select> 
-
-                <button onclick="addProduct()" class="btn-add">Add Product</button>
-            </div>
-
-            <div id="stats-container">
-                <div class="stat-card">
-                    <span class="stat-label">Total Items</span>
-                    <span id="stat-total" class="stat-number">0</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Store Value</span>
-                    <span class="stat-number">$<span id="stat-value">0</span></span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label" style="color: #ef4444;">Low Stock</span>
-                    <span id="stat-low" class="stat-number" style="color: #ef4444;">0</span>
-                </div>
-            </div>
-
-            <div class="filter-section">
-                <div style="flex: 2; display: flex; align-items: center; gap: 10px;">
-                    <label for="search-input">🔍 Search:</label>
-                    <input type="text" id="search-input" placeholder="Search by name..." oninput="loadInventory()">
-                </div>
-                <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
-                    <label for="filter-category">Category:</label>
-                    <select id="filter-category" onchange="loadInventory()">
-                        <option value="all">All</option>
-                    </select>
-                </div>
-            </div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Code</th> <th>Name</th>
-                        <th>Price</th>
-                        <th>Stock</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="product-list"></tbody>
-            </table>
+        <div style="padding: 20px; border-top: 1px solid #334155;">
+            <a href="login.html" style="color: #94a3b8; text-decoration: none; font-size: 0.85rem;">🔐 Admin Login</a>
         </div>
+    </aside>
 
-        <div id="category-section" class="page-section" style="display:none;">
-            <h1>📁 Category Manager</h1>
-            <div class="form-group">
-                <input type="text" id="cat-name" placeholder="Category Name (e.g. Watches)">
-                <input type="text" id="cat-prefix" placeholder="Prefix (e.g. WAT)">
-                <button onclick="addCategory()" class="btn-add">Add Category</button>
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        <header class="navbar">
+            <div id="section-title" style="font-weight: 600; font-size: 1.1rem; color: var(--text-main);">Dashboard Overview</div>
+            <div class="user-profile">
+                <span id="admin-name" style="color: var(--text-muted); font-size: 0.9rem;">Management Portal</span>
             </div>
-            <div class="filter-section">
-                <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
-                    <label for="cat-search-input">🔍 Search:</label>
-                    <input type="text" id="cat-search-input" placeholder="Search by name or prefix..." oninput="loadCategories()">
+        </header>
+
+        <main class="content-area">
+            <!-- Dashboard Overview Section -->
+            <div id="dashboard-section" class="page-section">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-label">Total Products</span>
+                        <div id="stat-total" class="stat-value">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Total Inventory Value</span>
+                        <div class="stat-value">$<span id="stat-value">0</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label" style="color: #ef4444;">Low Stock Alerts</span>
+                        <div id="stat-low" class="stat-value" style="color: #ef4444;">0</div>
+                    </div>
+                </div>
+
+                <div class="grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 32px;">
+                    <div class="card" style="margin-bottom: 0;">
+                        <div class="card-header">
+                            <h3 class="card-title">Inventory Value by Category</h3>
+                        </div>
+                        <div style="height: 250px;">
+                            <canvas id="valueChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-bottom: 0;">
+                        <div class="card-header">
+                            <h3 class="card-title">Quick Actions</h3>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <button class="btn-primary" onclick="showSection('inventory-section')">Add New Product</button>
+                            <button class="btn-primary" style="background: #8b5cf6;" onclick="showSection('stock-in-section')">Entry New Stock</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <table>
-                <thead>
-                    <tr><th>ID</th><th>Name</th><th>Prefix</th></tr>
-                </thead>
-                <tbody id="category-list"></tbody>
-            </table>
-        </div>
+
+            <!-- Inventory Section -->
+            <div id="inventory-section" class="page-section" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Add New Product</h3>
+                    </div>
+                    <div class="form-grid">
+                        <input type="text" id="name" placeholder="Product Name">
+                        <input type="number" id="price" placeholder="Price">
+                        <input type="number" id="stock" placeholder=" Stock">
+                        <div style="display: flex; gap: 8px; flex: 1; min-width: 200px;">
+                            <select id="cat-select" style="flex: 1;">
+                                <option value="">Select Category</option>
+                            </select>
+                            <button onclick="quickAddCategory()" class="btn-primary" title="Add New Category" style="padding: 0 15px; background: #10b981;">+</button>
+                        </div>
+                        <button onclick="addProduct()" class="btn-primary">Create Product</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Product List</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="search-input" placeholder="Search..." oninput="debouncedLoadInventory()">
+                            <select id="filter-category" onchange="loadInventory()">
+                                <option value="all">All Categories</option>
+                            </select>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item ID (Cat+Prod)</th>
+                                <th>Product Name</th>
+                                <th>Unit Price</th>
+                                <th>Stock Level</th>
+                                <th>Added On</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-list"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Stock In Section -->
+            <div id="stock-in-section" class="page-section" style="display:none;">
+                <div class="card" style="max-width: 600px; margin: 0 auto;">
+                    <div class="card-header">
+                        <h3 class="card-title">📥 Inventory Stock In</h3>
+                    </div>
+                    <p style="color: var(--text-muted); margin-bottom: 24px;">Search for a product by its combined ID or name to add stock.</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500;">Select Product</label>
+                            <select id="stock-product-select" style="width: 100%;">
+                                <option value="">Search by Code or Name...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500;">Quantity to Add</label>
+                            <input type="number" id="stock-qty" placeholder="Enter quantity" style="width: 100%; box-sizing: border-box;">
+                        </div>
+                        <button onclick="submitStockIn()" class="btn-primary" style="background: #8b5cf6; padding: 14px;">Update Inventory Level</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories Section -->
+            <div id="category-section" class="page-section" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">New Category</h3>
+                    </div>
+                    <div class="form-grid">
+                        <input type="text" id="cat-name" placeholder="Category Name (e.g. Watches)">
+                        <button onclick="addCategory()" class="btn-primary">Create Category</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Existing Categories</h3>
+                        <input type="text" id="cat-search-input" placeholder="Search categories..." oninput="loadCategories()">
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Category ID</th>
+                                <th>Category Name</th>
+                            </tr>
+                        </thead>
+                        <tbody id="category-list"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Logs Section -->
+            <div id="logs-section" class="page-section" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">System Activity History</h3>
+                        <button class="btn-primary" onclick="loadLogs()" style="background: #64748b; padding: 6px 12px; font-size: 0.8rem;">🔄 Refresh</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Action</th>
+                                <th>Product</th>
+                                <th>Details</th>
+                                <th>Change</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script>
-        const API_URL = 'http://localhost:3000/products';
+        const API_URL = '/products';
         let editingId = null;
+        let valueChart = null;
+        let allCategories = [];
+
+        // Helper for authenticated fetch
+        async function fetchWithAuth(url, options = {}) {
+            const token = localStorage.getItem('adminToken');
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+            if (token) {
+                headers['Authorization'] = token;
+            }
+            return fetch(url, { ...options, headers });
+        }
 
         async function loadStats() {
             try {
-                const res = await fetch('http://localhost:3000/stats');
+                const res = await fetch('/stats');
                 const stats = await res.json();
                 document.getElementById('stat-total').innerText = stats.totalItems;
                 document.getElementById('stat-value').innerText = Number(stats.totalValue).toLocaleString();
                 document.getElementById('stat-low').innerText = stats.lowStockCount;
+
+                if (stats.categoryBreakdown) {
+                    updateValueChart(stats.categoryBreakdown);
+                }
             } catch (err) { console.error("Stats fail:", err); }
+        }
+
+        function updateValueChart(breakdown) {
+            const canvas = document.getElementById('valueChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            const labels = breakdown.map(item => item.name);
+            const data = breakdown.map(item => Number(item.value));
+
+            if (valueChart) {
+                valueChart.destroy();
+            }
+
+            // Generate colors for bars
+            const backgroundColors = [
+                '#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
+                '#ec4899', '#06b6d4', '#3b82f6'
+            ];
+
+            valueChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Inventory Value ($)',
+                        data: data,
+                        backgroundColor: labels.map((_, i) => backgroundColors[i % backgroundColors.length]),
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Value: $' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f1f5f9' },
+                            ticks: {
+                                callback: function(value) { return '$' + value.toLocaleString(); }
+                            }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        let searchTimeout;
+        function debouncedLoadInventory() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(loadInventory, 300);
         }
 
         async function loadInventory() {
@@ -134,50 +314,68 @@
             const searchValue = document.getElementById('search-input').value.trim();
 
             try {
-                // Build query parameters
                 const params = new URLSearchParams();
-                if (searchValue) {
-                    params.append('search', searchValue);
-                }
-                if (filterValue !== 'all') {
-                    params.append('category_id', filterValue);
-                }
-                const queryString = params.toString();
-                const url = queryString ? `${API_URL}?${queryString}` : API_URL;
-
-                const res = await fetch(url);
+                if (searchValue) params.append('search', searchValue);
+                if (filterValue !== 'all') params.append('category_id', filterValue);
+                
+                const res = await fetch(`${API_URL}?${params.toString()}`);
                 const products = await res.json();
-
                 const list = document.getElementById('product-list');
                 list.innerHTML = ''; 
 
                 products.forEach(p => {
                     const row = document.createElement('tr');
+                    const stockClass = p.stock < 5 ? 'badge-low' : 'badge-stock';
+                    
+                    const currentPrice = Number(p.price).toFixed(2);
+                    const prevPrice = p.previous_price ? Number(p.previous_price).toFixed(2) : null;
+                    const priceDisplay = prevPrice && prevPrice !== currentPrice 
+                        ? `<div>$${currentPrice}</div><div style="font-size: 0.75rem; color: var(--text-muted); text-decoration: line-through;">$${prevPrice}</div>`
+                        : `$${currentPrice}`;
+
                     if (editingId === p.id) {
+                        const catOptions = allCategories.map(c => 
+                            `<option value="${c.id}" ${c.id === p.category_id ? 'selected' : ''}>${c.name}</option>`
+                        ).join('');
+
                         row.innerHTML = `
-                            <td>${p.item_code || '---'}</td>
-                            <td><input type="text" id="edit-name-${p.id}" value="${p.name}"></td>
-                            <td><input type="number" id="edit-price-${p.id}" value="${p.price}"></td>
-                            <td><input type="number" id="edit-stock-${p.id}" value="${p.stock}"></td>
-                            <td><button class="btn-update" onclick="saveEdit(${p.id})">Save</button></td>
+                            <td><span class="badge badge-code">${p.item_code}</span></td>
+                            <td>
+                                <input type="text" id="edit-name-${p.id}" value="${p.name}" style="width:100%; margin-bottom: 4px;">
+                                <select id="edit-cat-${p.id}" style="width:100%; font-size: 0.8rem;">${catOptions}</select>
+                            </td>
+                            <td><input type="number" id="edit-price-${p.id}" value="${p.price}" style="width:100px"></td>
+                            <td><input type="number" id="edit-stock-${p.id}" value="${p.stock}" style="width:80px"></td>
+                            <td>-</td>
+                            <td style="text-align: right;">
+                                <button class="btn-primary" onclick="saveEdit(${p.id})" style="padding: 4px 12px; font-size: 0.8rem;">Save</button>
+                                <button onclick="editingId=null; loadInventory();" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size: 0.8rem; margin-top: 4px; display:block; width:100%; text-align:right;">Cancel</button>
+                            </td>
                         `;
                     } else {
+                        const totalValue = (Number(p.price) * Number(p.stock)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        const dateAdded = p.created_at ? new Date(p.created_at).toLocaleDateString() : 'N/A';
                         row.innerHTML = `
-                            <td><strong>${p.item_code || '---'}</strong></td>
-                            <td>${p.name}</td>
-                            <td>$${p.price}</td>
-                            <td>${p.stock}</td>
+                            <td><span class="badge badge-code">${p.item_code}</span></td>
                             <td>
-                                <button class="btn-update" onclick="startEdit(${p.id})">Edit</button>
-                                <button class="btn-delete" onclick="deleteProduct(${p.id})">Delete</button>
+                                <strong>${p.name}</strong>
+                                <div style="font-size: 0.75rem; color: var(--primary-color); font-weight: 500;">${p.category_name || 'No Category'}</div>
+                            </td>
+                            <td>${priceDisplay}</td>
+                            <td>
+                                <span class="badge ${stockClass}">${p.stock} units</span>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500;">Value: $${totalValue}</div>
+                            </td>
+                            <td style="font-size: 0.85rem; color: var(--text-muted);">${dateAdded}</td>
+                            <td style="text-align: right;">
+                                <button onclick="startEdit(${p.id})" style="background:none; border:none; color:var(--primary-color); cursor:pointer; font-weight:600;">Edit</button>
+                                <button onclick="deleteProduct(${p.id})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:600; margin-left:12px;">Delete</button>
                             </td>
                         `;
                     }
                     list.appendChild(row);
                 });
-            } catch (err) {
-                console.error("Load inventory fail:", err);
-            }
+            } catch (err) { console.error("Load fail:", err); }
         }
 
         async function addProduct() {
@@ -185,148 +383,224 @@
             const price = document.getElementById('price').value;
             const stock = document.getElementById('stock').value;
             const category_id = document.getElementById('cat-select').value;
-
-            if (!name || !price || !stock || !category_id) return alert("Please fill all fields and select a category!");
+            
+            if (!name || !price || !stock || !category_id) {
+                return alert("All fields (Name, Price, Stock, and Category) are required!");
+            }
 
             try {
-                const res = await fetch(API_URL, {
+                const res = await fetchWithAuth(API_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, price, stock, category_id })
                 });
-
-                const result = await res.json();
-                if (!res.ok) return alert(result.error || "Failed to add product");
-
-                document.getElementById('name').value = '';
-                document.getElementById('price').value = '';
-                document.getElementById('stock').value = '';
                 
-                loadInventory();
-            } catch (err) {
-                console.error("Add product fail:", err);
-                alert("Server error connecting to backend");
-            }
-        }
-
-        async function deleteProduct(id) {
-            if (confirm("Delete?")) {
-                try {
-                    await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                const result = await res.json();
+                
+                if (res.ok) {
+                    document.getElementById('name').value = '';
+                    document.getElementById('price').value = '';
+                    document.getElementById('stock').value = '';
+                    alert("Product created successfully!");
                     loadInventory();
-                } catch (err) {
-                    console.error("Delete product fail:", err);
+                } else {
+                    alert("Error: " + (result.error || "Failed to create product"));
                 }
-            }
-        }
-
-        async function addCategory() {
-            const name = document.getElementById('cat-name').value;
-            const prefix = document.getElementById('cat-prefix').value;
-
-            if (!name || !prefix) return alert("Fill category name and prefix!");
-
-            try {
-                const res = await fetch('http://localhost:3000/categories', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, prefix })
-                });
-
-                const result = await res.json();
-                if (!res.ok) return alert(result.error || "Failed to add category");
-
-                document.getElementById('cat-name').value = '';
-                document.getElementById('cat-prefix').value = '';
-                
-                loadCategories();
-                fillCategoryDropdowns();
-            } catch (err) {
-                console.error("Add category fail:", err);
-                alert("Server error connecting to backend");
-            }
-        }
-
-        function startEdit(id) { editingId = id; loadInventory(); }
-
-        async function saveEdit(id) {
-            const name = document.getElementById(`edit-name-${id}`).value;
-            const price = document.getElementById(`edit-price-${id}`).value;
-            const stock = document.getElementById(`edit-stock-${id}`).value;
-
-            try {
-                await fetch(`${API_URL}/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, price, stock })
-                });
-                editingId = null;
-                loadInventory();
-            } catch (err) {
-                console.error("Save edit fail:", err);
+            } catch (err) { 
+                console.error("Add product error:", err);
+                alert("Server error: Could not connect to the database or API.");
             }
         }
 
         function showSection(sectionId) {
-            const sections = document.querySelectorAll('.page-section');
-            sections.forEach(section => {
-                section.style.display = 'none';
-            });
+            $('.page-section').hide();
+            $(`#${sectionId}`).show();
+            $('.nav-item').removeClass('active');
+            
+            const titles = {
+                'dashboard-section': 'Dashboard Overview',
+                'inventory-section': 'Inventory Management',
+                'stock-in-section': 'Stock Entry (In)',
+                'category-section': 'Category Management',
+                'logs-section': 'Activity Logs'
+            };
+            document.getElementById('section-title').innerText = titles[sectionId];
 
-            const target = document.getElementById(sectionId);
-            if (target) {
-                target.style.display = 'block';
+            if (sectionId === 'dashboard-section') {
+                $('#nav-dash').addClass('active');
+                loadStats();
             }
+            if (sectionId === 'inventory-section') { $('#nav-inv').addClass('active'); loadInventory(); }
+            if (sectionId === 'stock-in-section') { $('#nav-stock').addClass('active'); initStockSelect2(); }
+            if (sectionId === 'category-section') { $('#nav-cat').addClass('active'); loadCategories(); }
+            if (sectionId === 'logs-section') { $('#nav-logs').addClass('active'); loadLogs(); }
+        }
 
-            if (sectionId === 'category-section') {
-                loadCategories();
-            }
+        async function initStockSelect2() {
+            try {
+                const res = await fetch(API_URL);
+                const products = await res.json();
+                const data = products.map(p => ({
+                    id: p.item_code,
+                    text: `[ID: ${p.item_code}] — ${p.name}`
+                }));
+
+                $('#stock-product-select').empty().select2({
+                    data: data,
+                    placeholder: "Select product by ID or Name...",
+                    allowClear: true
+                });
+            } catch (err) { console.error(err); }
+        }
+
+        async function submitStockIn() {
+            const item_code = $('#stock-product-select').val();
+            const quantity = document.getElementById('stock-qty').value;
+            if (!item_code || !quantity) return alert("Selection and quantity required!");
+
+            try {
+                const res = await fetchWithAuth('/stock-in', {
+                    method: 'POST',
+                    body: JSON.stringify({ item_code, quantity })
+                });
+                if (res.ok) {
+                    alert("Stock Updated!");
+                    document.getElementById('stock-qty').value = '';
+                    $('#stock-product-select').val(null).trigger('change');
+                    loadStats();
+                } else {
+                    const data = await res.json();
+                    alert(data.error || "Failed to update stock");
+                }
+            } catch (err) { console.error(err); }
         }
 
         async function loadCategories() {
             try {
-                const searchValue = document.getElementById('cat-search-input').value.trim();
-                const params = new URLSearchParams();
-                if (searchValue) {
-                    params.append('search', searchValue);
-                }
-                const queryString = params.toString();
-                const url = queryString ? `http://localhost:3000/categories?${queryString}` : 'http://localhost:3000/categories';
-
-                const res = await fetch(url);
+                const res = await fetch('/categories');
                 const data = await res.json();
-                const list = document.getElementById('category-list');
-                list.innerHTML = data.map(c => `<tr><td>${c.id}</td><td>${c.name}</td><td>${c.prefix}</td></tr>`).join('');
-            } catch (err) {
-                console.error("Load categories fail:", err);
-            }
+                document.getElementById('category-list').innerHTML = data.map(c => 
+                    `<tr><td><strong>${c.id}</strong></td><td>${c.name}</td></tr>`
+                ).join('');
+            } catch (err) { console.error(err); }
+        }
+
+        async function loadLogs() {
+            try {
+                const res = await fetchWithAuth('/logs');
+                if (!res.ok) {
+                    if (res.status === 401 || res.status === 403) {
+                        alert("Please login as admin to view logs.");
+                        showSection('dashboard-section');
+                        return;
+                    }
+                    throw new Error("Failed to load logs");
+                }
+                const data = await res.json();
+                const list = document.getElementById('logs-list');
+                list.innerHTML = data.map(log => {
+                    const date = new Date(log.timestamp).toLocaleString();
+                    const badgeClass = log.action_type === 'STOCK_IN' ? 'badge-stock' : 
+                                     log.action_type === 'DELETE' ? 'badge-low' : 'badge-code';
+                    
+                    return `
+                        <tr>
+                            <td style="font-size: 0.85rem; color: var(--text-muted);">${date}</td>
+                            <td><span class="badge ${badgeClass}">${log.action_type}</span></td>
+                            <td><strong>${log.product_name || 'N/A'}</strong> <br><small>${log.item_code || ''}</small></td>
+                            <td>${log.details}</td>
+                            <td>${log.quantity_changed !== 0 ? `<strong>${log.quantity_changed > 0 ? '+' : ''}${log.quantity_changed}</strong>` : '-'}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) { console.error(err); }
         }
 
         async function fillCategoryDropdowns() {
             try {
-                const res = await fetch('http://localhost:3000/categories');
-                const categories = await res.json();
-                
-                // Fill Add Product dropdown
-                const select = document.getElementById('cat-select');
-                select.innerHTML = '<option value="">Select Category</option>' + 
-                    categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-                
-                // Fill Filter dropdown
-                const filterSelect = document.getElementById('filter-category');
-                const currentFilter = filterSelect.value;
-                filterSelect.innerHTML = '<option value="all">All Categories</option>' + 
-                    categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-                filterSelect.value = currentFilter;
-            } catch (err) {
-                console.error("Fill category dropdown fail:", err);
+                const res = await fetch('/categories');
+                allCategories = await res.json();
+                const html = '<option value="">Select Category</option>' + allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                document.getElementById('cat-select').innerHTML = html;
+                document.getElementById('filter-category').innerHTML = '<option value="all">All Categories</option>' + allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            } catch (err) { console.error(err); }
+        }
+
+        async function addCategory() {
+            const name = document.getElementById('cat-name').value;
+            if (!name) return alert("Name required!");
+
+            const res = await fetchWithAuth('/categories', {
+                method: 'POST',
+                body: JSON.stringify({ name })
+            });
+            if (res.ok) {
+                document.getElementById('cat-name').value = '';
+                loadCategories();
+                fillCategoryDropdowns();
+            } else {
+                const data = await res.json();
+                alert(data.error || "Failed to add category");
             }
         }
 
-        // Initialize
-        showSection('inventory-section');
+        async function quickAddCategory() {
+            const name = prompt("Enter new category name:");
+            if (!name) return;
+
+            try {
+                const res = await fetchWithAuth('/categories', {
+                    method: 'POST',
+                    body: JSON.stringify({ name })
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    await fillCategoryDropdowns();
+                    document.getElementById('cat-select').value = result.id;
+                } else {
+                    alert(result.error || "Failed to add category");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error connecting to server");
+            }
+        }
+
+        function startEdit(id) { editingId = id; loadInventory(); }
+        async function saveEdit(id) {
+            const name = document.getElementById(`edit-name-${id}`).value;
+            const price = document.getElementById(`edit-price-${id}`).value;
+            const stock = document.getElementById(`edit-stock-${id}`).value;
+            const category_id = document.getElementById(`edit-cat-${id}`).value;
+
+            const res = await fetchWithAuth(`${API_URL}/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ name, price, stock, category_id })
+            });
+            if (res.ok) {
+                editingId = null;
+                loadInventory();
+            } else {
+                const data = await res.json();
+                alert(data.error || "Update failed");
+            }
+        }
+        async function deleteProduct(id) {
+            if (confirm("Delete product?")) {
+                const res = await fetchWithAuth(`${API_URL}/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    loadInventory();
+                } else {
+                    const data = await res.json();
+                    alert(data.error || "Delete failed");
+                }
+            }
+        }
+
+
+        // Init
         fillCategoryDropdowns();
-        loadInventory();
+        loadStats();
+        showSection('dashboard-section');
     </script>
 </body>
 </html>
