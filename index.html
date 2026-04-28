@@ -22,7 +22,10 @@
                 📊 Dashboard
             </button>
             <button class="nav-item" onclick="showSection('inventory-section')" id="nav-inv">
-                📦 Inventory
+                📦 Inventory List
+            </button>
+            <button class="nav-item" onclick="showSection('add-product-section')" id="nav-add-prod">
+                ✨ Add New Product
             </button>
             <button class="nav-item" onclick="showSection('stock-in-section')" id="nav-stock">
                 📥 Stock In
@@ -91,24 +94,6 @@
             <div id="inventory-section" class="page-section" style="display:none;">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Add New Product</h3>
-                    </div>
-                    <div class="form-grid">
-                        <input type="text" id="name" placeholder="Product Name">
-                        <input type="number" id="price" placeholder="Price">
-                        <input type="number" id="stock" placeholder=" Stock">
-                        <div style="display: flex; gap: 8px; flex: 1; min-width: 200px;">
-                            <select id="cat-select" style="flex: 1;">
-                                <option value="">Select Category</option>
-                            </select>
-                            <button onclick="quickAddCategory()" class="btn-primary" title="Add New Category" style="padding: 0 15px; background: #10b981;">+</button>
-                        </div>
-                        <button onclick="addProduct()" class="btn-primary">Create Product</button>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
                         <h3 class="card-title">Product List</h3>
                         <div style="display: flex; gap: 10px;">
                             <input type="text" id="search-input" placeholder="Search..." oninput="debouncedLoadInventory()">
@@ -118,18 +103,55 @@
                         </div>
                     </div>
                     <table>
-                        <thead>
-                            <tr>
-                                <th>Item ID (Cat+Prod)</th>
-                                <th>Product Name</th>
-                                <th>Unit Price</th>
-                                <th>Stock Level</th>
-                                <th>Added On</th>
-                                <th style="text-align: right;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="product-list"></tbody>
-                    </table>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Item ID (Cat+Prod)</th>
+                                    <th>Product Name</th>
+                                    <th>Batch Number</th>
+                                    <th>Unit Price</th>
+                                    <th>Stock Level</th>
+                                    <th>Added On</th>
+                                    <th style="text-align: right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="product-list"></tbody>
+                        </table>
+                </div>
+            </div>
+
+            <!-- Add Product Section -->
+            <div id="add-product-section" class="page-section" style="display:none;">
+                <div class="card" style="max-width: 800px; margin: 0 auto;">
+                    <div class="card-header">
+                        <h3 class="card-title">✨ Create New Product</h3>
+                    </div>
+                    <div class="form-grid">
+                        <div style="grid-column: span 2;">
+                            <label style="display:block; margin-bottom: 8px; font-weight:500;">Product Name</label>
+                            <input type="text" id="name" placeholder="Enter product name (e.g. Rolex Datejust)" style="width:100%;">
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom: 8px; font-weight:500;">Selling Price ($)</label>
+                            <input type="number" id="price" placeholder="0.00" style="width:100%;">
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom: 8px; font-weight:500;">Initial Stock Level</label>
+                            <input type="number" id="stock" placeholder="0" style="width:100%;">
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <label style="display:block; margin-bottom: 8px; font-weight:500;">Category</label>
+                            <div style="display: flex; gap: 8px;">
+                                <select id="cat-select" style="flex: 1;">
+                                    <option value="">Select Category</option>
+                                </select>
+                                <button onclick="quickAddCategory()" class="btn-primary" title="Add New Category" style="padding: 0 15px; background: #10b981;">+</button>
+                            </div>
+                        </div>
+                        <div style="grid-column: span 2; margin-top: 12px;">
+                            <button onclick="addProduct()" class="btn-primary" style="width:100%; padding: 14px;">🚀 Create Product & Initialize Inventory</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -148,9 +170,15 @@
                                 <option value="">Search by Code or Name...</option>
                             </select>
                         </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 8px; font-weight: 500;">Quantity to Add</label>
-                            <input type="number" id="stock-qty" placeholder="Enter quantity" style="width: 100%; box-sizing: border-box;">
+                        <div class="form-grid">
+                            <input type="number" id="stock-qty" placeholder="Quantity">
+                            <input type="number" id="stock-cost" placeholder="Cost Price">
+                            <input type="number" id="stock-sell" placeholder="Selling Price">
+                            <input type="text" id="stock-supplier" placeholder="Supplier Name">
+                            <input type="text" id="stock-batch" placeholder="Batch Number">
+                            <input type="date" id="stock-expiry" placeholder="Expiry Date">
+                            <input type="date" id="stock-date" placeholder="Received Date">
+                            <input type="text" id="stock-notes" placeholder="Notes">
                         </div>
                         <button onclick="submitStockIn()" class="btn-primary" style="background: #8b5cf6; padding: 14px;">Update Inventory Level</button>
                     </div>
@@ -219,14 +247,28 @@
         // Helper for authenticated fetch
         async function fetchWithAuth(url, options = {}) {
             const token = localStorage.getItem('adminToken');
+            if (!token) {
+                alert("This action requires admin login.");
+                window.location.href = 'login.html';
+                return new Promise(() => {}); // Stop execution
+            }
+
             const headers = {
                 'Content-Type': 'application/json',
-                ...options.headers
+                ...options.headers,
+                'Authorization': token
             };
-            if (token) {
-                headers['Authorization'] = token;
+
+            const res = await fetch(url, { ...options, headers });
+            
+            if (res.status === 401 || res.status === 403) {
+                localStorage.removeItem('adminToken');
+                alert("Session expired or invalid. Please login again.");
+                window.location.href = 'login.html';
+                return new Promise(() => {});
             }
-            return fetch(url, { ...options, headers });
+
+            return res;
         }
 
         async function loadStats() {
@@ -325,13 +367,14 @@
 
                 products.forEach(p => {
                     const row = document.createElement('tr');
-                    const stockClass = p.stock < 5 ? 'badge-low' : 'badge-stock';
-                    
-                    const currentPrice = Number(p.price).toFixed(2);
-                    const prevPrice = p.previous_price ? Number(p.previous_price).toFixed(2) : null;
-                    const priceDisplay = prevPrice && prevPrice !== currentPrice 
-                        ? `<div>$${currentPrice}</div><div style="font-size: 0.75rem; color: var(--text-muted); text-decoration: line-through;">$${prevPrice}</div>`
-                        : `$${currentPrice}`;
+                    const qty = Number(p.current_quantity ?? p.stock ?? 0);
+                    const currentPrice = Number(p.current_selling_price ?? p.price ?? 0);
+                    const avgCost = Number(p.average_cost_price ?? 0);
+                    const totalCost = Number(p.total_cost_value ?? qty * avgCost);
+                    const totalSell = Number(p.total_selling_value ?? qty * currentPrice);
+                    const profitPerUnit = currentPrice - avgCost;
+                    const stockClass = qty <= 0 ? 'badge-low' : 'badge-stock';
+                    const status = qty <= 0 ? 'Out of stock' : (qty < 5 ? 'Low stock' : 'In stock');
 
                     if (editingId === p.id) {
                         const catOptions = allCategories.map(c => 
@@ -339,34 +382,40 @@
                         ).join('');
 
                         row.innerHTML = `
-                            <td><span class="badge badge-code">${p.item_code}</span></td>
+                            <td><span class="badge badge-code">${p.combined_id || p.item_code || p.id}</span></td>
                             <td>
                                 <input type="text" id="edit-name-${p.id}" value="${p.name}" style="width:100%; margin-bottom: 4px;">
                                 <select id="edit-cat-${p.id}" style="width:100%; font-size: 0.8rem;">${catOptions}</select>
                             </td>
-                            <td><input type="number" id="edit-price-${p.id}" value="${p.price}" style="width:100px"></td>
-                            <td><input type="number" id="edit-stock-${p.id}" value="${p.stock}" style="width:80px"></td>
                             <td>-</td>
+                            <td><input type="number" id="edit-price-${p.id}" value="${currentPrice}" style="width:100px"></td>
+                            <td><input type="number" id="edit-stock-${p.id}" value="${qty}" style="width:80px"></td>
+                            <td>${p.created_at ? new Date(p.created_at).toLocaleDateString() : '-'}</td>
                             <td style="text-align: right;">
                                 <button class="btn-primary" onclick="saveEdit(${p.id})" style="padding: 4px 12px; font-size: 0.8rem;">Save</button>
                                 <button onclick="editingId=null; loadInventory();" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size: 0.8rem; margin-top: 4px; display:block; width:100%; text-align:right;">Cancel</button>
                             </td>
                         `;
                     } else {
-                        const totalValue = (Number(p.price) * Number(p.stock)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        const dateAdded = p.created_at ? new Date(p.created_at).toLocaleDateString() : 'N/A';
                         row.innerHTML = `
-                            <td><span class="badge badge-code">${p.item_code}</span></td>
+                            <td><span class="badge badge-code">${p.combined_id || p.item_code || p.id}</span></td>
                             <td>
                                 <strong>${p.name}</strong>
                                 <div style="font-size: 0.75rem; color: var(--primary-color); font-weight: 500;">${p.category_name || 'No Category'}</div>
                             </td>
-                            <td>${priceDisplay}</td>
+                            <td><span style="font-size: 0.85rem; font-family: monospace; color: var(--text-muted);">${p.latest_batch || 'None'}</span></td>
                             <td>
-                                <span class="badge ${stockClass}">${p.stock} units</span>
-                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500;">Value: $${totalValue}</div>
+                                $${currentPrice.toFixed(2)}
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">Cost: $${avgCost.toFixed(2)}</div>
                             </td>
-                            <td style="font-size: 0.85rem; color: var(--text-muted);">${dateAdded}</td>
+                            <td>
+                                <span class="badge ${stockClass}">${qty} units</span>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500;">${status}</div>
+                            </td>
+                            <td>
+                                <div style="font-size: 0.85rem;">${p.created_at ? new Date(p.created_at).toLocaleDateString() : '-'}</div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">Value: $${totalSell.toFixed(2)}</div>
+                            </td>
                             <td style="text-align: right;">
                                 <button onclick="startEdit(${p.id})" style="background:none; border:none; color:var(--primary-color); cursor:pointer; font-weight:600;">Edit</button>
                                 <button onclick="deleteProduct(${p.id})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:600; margin-left:12px;">Delete</button>
@@ -418,18 +467,17 @@
             
             const titles = {
                 'dashboard-section': 'Dashboard Overview',
-                'inventory-section': 'Inventory Management',
+                'inventory-section': 'Inventory List',
+                'add-product-section': 'Add New Product',
                 'stock-in-section': 'Stock Entry (In)',
                 'category-section': 'Category Management',
                 'logs-section': 'Activity Logs'
             };
-            document.getElementById('section-title').innerText = titles[sectionId];
+            document.getElementById('section-title').innerText = titles[sectionId] || 'Management Portal';
 
-            if (sectionId === 'dashboard-section') {
-                $('#nav-dash').addClass('active');
-                loadStats();
-            }
+            if (sectionId === 'dashboard-section') { $('#nav-dash').addClass('active'); loadStats(); }
             if (sectionId === 'inventory-section') { $('#nav-inv').addClass('active'); loadInventory(); }
+            if (sectionId === 'add-product-section') { $('#nav-add-prod').addClass('active'); fillCategoryDropdowns(); }
             if (sectionId === 'stock-in-section') { $('#nav-stock').addClass('active'); initStockSelect2(); }
             if (sectionId === 'category-section') { $('#nav-cat').addClass('active'); loadCategories(); }
             if (sectionId === 'logs-section') { $('#nav-logs').addClass('active'); loadLogs(); }
